@@ -19,9 +19,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import com.google.common.collect.Lists;
 import com.verizon.loading.frontcontroller.loadingcontroller.model.Bookstore;
-
 
 @Service
 public class FileHandlerImpl implements FileHandler {
@@ -30,8 +28,8 @@ public class FileHandlerImpl implements FileHandler {
 
 	@Override
 	public List<Bookstore> loadFiles() throws Exception {
-		
-		List<Bookstore>  bookStoreList = new ArrayList<Bookstore>();
+
+		List<Bookstore> bookStoreList = new ArrayList<Bookstore>();
 
 		try {
 			List<File> filesInFolder = Files.walk(Paths.get("/Users/puneethreddy/Documents/bookstore"))
@@ -39,31 +37,26 @@ public class FileHandlerImpl implements FileHandler {
 			/*
 			 * filesInFolder.stream().forEach(f -> { log.info(f.getAbsolutePath()); });
 			 */
-			List<List<File>> filesPartitonList = Lists.partition(filesInFolder, 4);
-			filesPartitonList.forEach(list -> {
+			filesInFolder.forEach(list -> {
 				log.info("Making controller class call :" + list);
-				List<Bookstore>  bookstoreData = getBookStoreData(list);
-				bookStoreList.addAll(bookstoreData);
+				Bookstore bookstoreData = getBookStoreData(list);
+				bookStoreList.add(bookstoreData);
 			});
 		} catch (Exception e) {
 			throw e;
 		}
-		
-		
 
 		return bookStoreList;
 
 	}
 
-	public List<Bookstore> getBookStoreData(List<File> files) {
+	public Bookstore getBookStoreData(File file) {
 		log.info("Starting Bookstore Controller!");
 		final String serverUrl = "http://localhost:8080/file-load";
 
 		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-		for (File file : files) {
-			log.info(file.getAbsolutePath());
-			body.add("files", new FileSystemResource(file));
-		}
+		log.info(file.getAbsolutePath());
+		body.add("files", new FileSystemResource(file));
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -71,7 +64,7 @@ public class FileHandlerImpl implements FileHandler {
 		HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
 		RestTemplate restTemplate = new RestTemplate();
-		List<Bookstore> response = restTemplate.postForObject(serverUrl, requestEntity, List.class);
+		Bookstore response = restTemplate.postForObject(serverUrl, requestEntity, Bookstore.class);
 		log.info("Exiting BLOCKING Controller!" + response);
 		return response;
 	}
